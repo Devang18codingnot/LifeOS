@@ -1,0 +1,13 @@
+# Secrets and local environment files
+.env
+atlas-credentials.env
+
+# Python virtual environments and generated files
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Incomplete browser downloads
+*.crdownload
+

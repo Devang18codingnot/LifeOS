@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in | LifeOS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="app">
+        <section class="screen active auth-screen">
+            <div class="auth-shell">
+                <div class="auth-visual">
+                    <div class="auth-mark">L</div>
+                    <span class="auth-kicker">LIFEOS / PRIVATE ACCESS</span>
+                    <h1>Ready when<br><em>it matters.</em></h1>
+                    <p>Your emergency information stays connected to your account and is protected by secure sign-in.</p>
+                    <div class="auth-trust"><span>✓</span> Private account storage</div>
+                    <div class="auth-trust"><span>✓</span> Personal report history</div>
+                </div>
+
+                <div class="auth-card">
+                    <div class="auth-form-heading">
+                        <span class="auth-form-label">ACCOUNT ACCESS</span>
+                        <h2 id="authTitle">Welcome back</h2>
+                        <p id="authSubtitle">Log in to securely save and access your emergency reports.</p>
+                    </div>
+
+                    <form id="authForm" onsubmit="submitAuth(event)">
+                        <label id="nameField" hidden>
+                            Name
+                            <input id="authName" type="text" autocomplete="name" maxlength="100">
+                        </label>
+                        <label>
+                            Email
+                            <input id="authEmail" type="email" autocomplete="email" required>
+                        </label>
+                        <label>
+                            Password
+                            <input id="authPassword" type="password" autocomplete="current-password" minlength="8" required>
+                        </label>
+                        <button class="primary-button auth-submit" type="submit">
+                            <span id="authSubmitText">Log in</span><span>→</span>
+                        </button>
+                    </form>
+
+                    <p id="authError" class="auth-error" role="alert"></p>
+                    <button id="authToggle" class="auth-toggle" type="button" onclick="toggleAuthMode()">
+                        Create an account
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="auth.js"></script>
+</body>
+</html>
