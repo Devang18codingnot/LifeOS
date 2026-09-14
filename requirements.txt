@@ -8,3 +8,4 @@ gunicorn
 Werkzeug
 certifi
 authlib
+requests
