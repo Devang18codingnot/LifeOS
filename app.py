@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from functools import wraps
 from typing import Any
 
+import certifi
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, session, redirect, send_from_directory
 from flask_cors import CORS
@@ -108,7 +109,11 @@ if MONGODB_URI:
     try:
         client = MongoClient(
             MONGODB_URI,
-            serverSelectionTimeoutMS=5000
+            tls=True,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=20000,
+            socketTimeoutMS=20000
         )
 
         db = client[DATABASE_NAME]
