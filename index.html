@@ -15,7 +15,7 @@
         rel="stylesheet"
     >
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=responsive-20260915-v2">
 </head>
 
 <body>
@@ -38,8 +38,25 @@
                 </div>
 
                 <div class="topbar-actions">
-                    <button id="profileButton" class="icon-button" onclick="openProfile()" aria-label="Medical profile">♥</button>
-                    <button id="authActionButton" class="icon-button" onclick="logout()" aria-label="Log out">⇥</button>
+                    <div id="accountMenu" class="account-menu">
+                        <button
+                            id="accountMenuButton"
+                            class="icon-button"
+                            type="button"
+                            onclick="toggleAccountMenu(event)"
+                            aria-label="Open account menu"
+                            aria-expanded="false"
+                        >
+                            ☰
+                        </button>
+
+                        <div id="accountMenuPanel" class="account-menu__panel" hidden>
+                            <button id="logoutMenuButton" class="account-menu__item account-menu__item--danger" type="button" onclick="logout()">
+                                <span aria-hidden="true">⇥</span>
+                                Log out
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </header>
 
@@ -148,46 +165,8 @@
                     <div class="location-check">✓</div>
                 </div>
 
-                <button class="history-link" type="button" onclick="openLifeSavedHistory()">
-                    <span class="history-link__icon">✦</span>
-                    <span>
-                        <strong>Life saved history</strong>
-                        <small>Review your previous emergency reports</small>
-                    </span>
-                    <span class="arrow">→</span>
-                </button>
-
             </div>
 
-        </section>
-
-        <section id="historyScreen" class="screen">
-            <header class="page-header">
-                <button class="back-button" onclick="goHome()">←</button>
-                <div>
-                    <span class="eyebrow">YOUR RECORD</span>
-                    <h2>Life saved history</h2>
-                </div>
-            </header>
-
-            <div class="history-page-content">
-                <div class="history-page-intro">
-                    <span class="history-page-icon">✦</span>
-                    <div>
-                        <h3>Your emergency timeline</h3>
-                        <p>Reports saved securely to your LifeOS account.</p>
-                    </div>
-                </div>
-
-                <div class="section-heading history-page-heading">
-                    <h3>Previous reports</h3>
-                    <span id="historySummary">Recent</span>
-                </div>
-
-                <div id="lifeHistoryList" class="history-list">
-                    <div class="history-empty">No saved life events yet.</div>
-                </div>
-            </div>
         </section>
 
         <section id="profileScreen" class="screen">
@@ -201,12 +180,12 @@
             <div class="profile-content">
                 <p class="profile-note">This information helps responders understand your needs. Keep it current and do not enter anything you do not want stored.</p>
                 <form id="profileForm" onsubmit="saveProfile(event)">
-                    <label>Blood type<input name="bloodType" maxlength="20" placeholder="e.g. O+" /></label>
+                    <label>Blood type<input name="blood_group" maxlength="20" placeholder="e.g. O+" /></label>
                     <label>Allergies<textarea name="allergies" maxlength="500" placeholder="List allergies or write None"></textarea></label>
-                    <label>Medical conditions<textarea name="conditions" maxlength="500" placeholder="Relevant conditions"></textarea></label>
+                    <label>Medical conditions<textarea name="medical_conditions" maxlength="500" placeholder="Relevant conditions"></textarea></label>
                     <label>Current medications<textarea name="medications" maxlength="500" placeholder="Medication names only"></textarea></label>
-                    <label>Emergency contact name<input name="emergencyContactName" maxlength="100" /></label>
-                    <label>Emergency contact phone<input name="emergencyContactPhone" maxlength="30" inputmode="tel" /></label>
+                    <label>Emergency contact name<input name="emergency_contact" maxlength="100" /></label>
+                    <label>Emergency contact phone<input name="emergency_phone" maxlength="30" inputmode="tel" /></label>
                     <button class="primary-button" type="submit"><span>Save medical profile</span><span>→</span></button>
                 </form>
                 <p id="profileStatus" class="profile-status" role="status"></p>
@@ -259,6 +238,7 @@
 
                     <textarea
                         id="emergencyDescription"
+                        aria-label="Describe the emergency"
                         placeholder="Example: There has been a bike accident. One person is injured..."
                         maxlength="500"
                     ></textarea>
@@ -267,12 +247,16 @@
                         <span id="characterCount">0 / 500</span>
 
                         <button
-                            class="voice-button"
+                            id="voiceButton"
+                            type="button"
+                            class="voice-button voice-button--record"
                             onclick="voiceInput()"
                         >
-                            🎙 Speak
+                            Record voice
                         </button>
                     </div>
+
+                    <p id="voiceStatus" class="voice-status" role="status" aria-live="polite"></p>
 
                 </div>
 
@@ -283,12 +267,14 @@
 
 
                 <button
+                    type="button"
                     class="photo-upload"
                     onclick="document.getElementById('photoInput').click()"
+                    aria-label="Add a scene photo"
                 >
                     <div class="upload-icon">＋</div>
 
-                    <div>
+                    <div class="photo-upload__copy">
                         <strong>Add scene photo</strong>
                         <span>Optional — help AI understand the scene</span>
                     </div>
@@ -304,6 +290,8 @@
                     onchange="photoSelected()"
                 >
 
+                <img id="photoPreview" class="photo-preview" alt="Selected emergency scene preview" hidden>
+
 
                 <div class="location-card">
 
@@ -315,13 +303,34 @@
                         <small id="locationCoordinates" style="display:block; margin-top:4px; opacity:0.8;">Tap to detect your current position</small>
                     </div>
 
-                    <button type="button" class="green-dot" onclick="getCurrentLocation(false)" aria-label="Use my current location" style="border:none; cursor:pointer; background: #20c97b; color: white; font-size: 0.9rem; padding: 8px 10px; border-radius: 999px;">Use</button>
+                    <button type="button" class="location-use" onclick="getCurrentLocation(false)" aria-label="Use my current location">Use</button>
 
                 </div>
 
                 <div id="locationMapWrap" style="margin-top: 12px; display:none; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,0.12);">
                     <iframe id="locationMapFrame" title="Current location map" width="100%" height="180" style="border:0; display:none;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
+
+                <section class="instant-help" aria-labelledby="instantHelpTitle">
+                    <div class="instant-help__heading">
+                        <span class="instant-help__icon" aria-hidden="true">!</span>
+                        <div>
+                            <span class="eyebrow">IMMEDIATE SUPPORT</span>
+                            <h3 id="instantHelpTitle">Get help now</h3>
+                        </div>
+                    </div>
+                    <p id="instantHelpText">If anyone is in immediate danger, move to safety and call local emergency services.</p>
+                    <div class="instant-help__actions">
+                        <button class="instant-help__call" type="button" onclick="callEmergency()">
+                            <span aria-hidden="true">☎</span>
+                            Call emergency services
+                        </button>
+                        <button class="instant-help__secondary" type="button" onclick="getCurrentLocation(false)">
+                            Share location
+                        </button>
+                    </div>
+                    <p id="instantHelpStatus" class="instant-help__status" role="status" aria-live="polite"></p>
+                </section>
 
                 <button
                     class="primary-button"
@@ -524,9 +533,14 @@
 
                     <div>
                         <span class="footer-dot green"></span>
-                        LifeOS ready
+                        Life saved report sent
                     </div>
 
+                </div>
+
+                <div class="saved-confirmation" role="status" aria-live="polite">
+                    <strong>Life saved report sent</strong>
+                    <span>Authority confirmation: awaiting status update.</span>
                 </div>
 
             </div>
