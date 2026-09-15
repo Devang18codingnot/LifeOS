@@ -1,3 +1,4 @@
+import hmac
 import json
 import os
 from datetime import datetime, timezone
@@ -30,7 +31,11 @@ except ImportError:
 APP_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
 ENV_FILE = os.path.join(APP_DIRECTORY, ".env")
-load_dotenv(ENV_FILE)
+ALT_ENV_FILE = os.path.join(APP_DIRECTORY, "atlas-credentials.env")
+
+for env_path in (ENV_FILE, ALT_ENV_FILE):
+    if os.path.exists(env_path):
+        load_dotenv(env_path, override=False)
 
 MONGODB_URI = os.getenv("MONGODB_URI")
 DATABASE_NAME = os.getenv("MONGODB_DATABASE", "lifeos")
@@ -39,6 +44,13 @@ SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+
+AUTHORITY_EMAILS = {
+    email.strip().lower()
+    for email in os.getenv("AUTHORITY_EMAILS", "").split(",")
+    if email.strip()
+}
+AUTHORITY_ACCESS_CODE = os.getenv("AUTHORITY_ACCESS_CODE", "")
 
 SESSION_COOKIE_SECURE = (
     os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
@@ -200,6 +212,28 @@ def login_required(function):
     return wrapper
 
 
+def authority_required(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            return jsonify({"error": "Authentication required."}), 401
+
+        if not database_configured() or not AUTHORITY_EMAILS:
+            return jsonify({"error": "Authority access is not configured."}), 403
+
+        try:
+            user = users.find_one({"_id": ObjectId(session["user_id"])}, {"email": 1})
+        except (PyMongoError, Exception):
+            user = None
+
+        if not user or user.get("email", "").lower() not in AUTHORITY_EMAILS:
+            return jsonify({"error": "Authority access required."}), 403
+
+        return function(*args, **kwargs)
+
+    return wrapper
+
+
 def serialize_report(report):
 
     report = dict(report)
@@ -224,7 +258,8 @@ def serialize_user(user):
     return {
         "id": str(user["_id"]),
         "name": user.get("name", ""),
-        "email": user.get("email", "")
+        "email": user.get("email", ""),
+        "is_authority": user.get("email", "").lower() in AUTHORITY_EMAILS
     }
 
 
@@ -254,6 +289,17 @@ def login_page():
         APP_DIRECTORY,
         "login.html"
     )
+
+
+@app.route("/authority/login")
+def authority_login_page():
+    return send_from_directory(APP_DIRECTORY, "authority-login.html")
+
+
+@app.route("/authority")
+@authority_required
+def authority_page():
+    return send_from_directory(APP_DIRECTORY, "authority.html")
 
 
 # ============================================================
@@ -383,6 +429,10 @@ def login():
 
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
+    account_type = data.get("accountType", "user")
+    authority_code = data.get("authorityCode", "")
+    if not isinstance(authority_code, str):
+        authority_code = ""
 
     if not email or not password:
         return jsonify({
@@ -407,6 +457,20 @@ def login():
             return jsonify({
                 "error": "Invalid email or password."
             }), 401
+
+        is_authority = email in AUTHORITY_EMAILS
+        if account_type not in {"user", "authority"}:
+            return jsonify({
+                "error": "Choose User or Authority."
+            }), 400
+        if account_type == "authority" and (
+            not is_authority
+            or not AUTHORITY_ACCESS_CODE
+            or not hmac.compare_digest(authority_code, AUTHORITY_ACCESS_CODE)
+        ):
+            return jsonify({
+                "error": "The authority email or access code is not valid."
+            }), 403
 
         session["user_id"] = str(user["_id"])
 
@@ -757,13 +821,21 @@ def create_report():
         }), 503
 
     data = request.get_json(silent=True) or {}
+    audio_data_url = data.get("audioDataUrl")
+    if not isinstance(audio_data_url, str) or len(audio_data_url) > 2 * 1024 * 1024:
+        audio_data_url = None
 
     report = {
         "user_id": ObjectId(session["user_id"]),
-        "type": data.get("type", "medical"),
-        "symptoms": data.get("symptoms", ""),
+        "type": data.get("emergencyType", data.get("type", "medical")),
+        "symptoms": data.get("description", data.get("symptoms", "")),
+        "voiceTranscript": data.get("voiceTranscript"),
+        "inputMethod": data.get("inputMethod", "typed"),
+        "audioDataUrl": audio_data_url,
         "risk_level": data.get("risk_level", ""),
         "location": data.get("location"),
+        "locationLabel": data.get("locationLabel"),
+        "photoUrl": data.get("photoUrl"),
         "analysis": data.get("analysis"),
         "status": data.get("status", "active"),
         "created_at": datetime.now(timezone.utc)
@@ -777,6 +849,7 @@ def create_report():
 
         return jsonify({
             "message": "Emergency report saved.",
+            "reportId": str(report["_id"]),
             "report": serialize_report(report)
         }), 201
 
@@ -831,6 +904,55 @@ def get_reports():
         return jsonify({
             "error": "Unable to load reports."
         }), 500
+
+
+@app.route("/api/authority/reports", methods=["GET"])
+@authority_required
+def get_authority_reports():
+    try:
+        authority_reports = reports.find().sort("created_at", -1).limit(200)
+        return jsonify({
+            "reports": [serialize_report(report) for report in authority_reports]
+        })
+    except PyMongoError as e:
+        print("Get authority reports error:", str(e))
+        return jsonify({"error": "Unable to load authority reports."}), 500
+
+
+@app.route("/api/authority/reports/<report_id>/status", methods=["PATCH"])
+@authority_required
+def update_authority_report_status(report_id):
+    data = request.get_json(silent=True) or {}
+    status = data.get("status")
+    allowed_statuses = {
+        "patient_safe",
+        "not_safe",
+        "in_danger",
+        "about_to_be_in_treatment"
+    }
+
+    if status not in allowed_statuses:
+        return jsonify({"error": "Choose a valid report status."}), 400
+
+    try:
+        result = reports.update_one(
+            {"_id": ObjectId(report_id)},
+            {"$set": {
+                "status": status,
+                "patient_details": {
+                    "name": str(data.get("patientName", "")).strip()[:120],
+                    "condition": str(data.get("patientCondition", "")).strip()[:500],
+                    "notes": str(data.get("authorityNotes", "")).strip()[:1000]
+                },
+                "status_updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        if result.matched_count == 0:
+            return jsonify({"error": "Report not found."}), 404
+        return jsonify({"message": "Report status updated.", "status": status})
+    except (PyMongoError, Exception) as e:
+        print("Update authority report status error:", str(e))
+        return jsonify({"error": "Unable to update report status."}), 500
 
 
 # ============================================================
