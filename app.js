@@ -459,34 +459,32 @@ function updateCharacterCount() {
 
 function photoSelected() {
 
-    const input =
-        document.getElementById("photoInput");
+    const input = document.getElementById("photoInput");
+    if (!input || !input.files || input.files.length === 0) return;
 
-    if (input.files.length > 0) {
-
-        lifeOS.photoAdded = true;
-
-        const uploadButton =
-            document.querySelector(".photo-upload");
-
-        uploadButton.style.borderColor =
-            "rgba(53, 213, 138, 0.35)";
-
-        const selectedFile = input.files[0];
-        uploadButton.querySelector("strong").textContent = selectedFile.name;
-
-        uploadButton.querySelector("span:not(.arrow)").textContent =
-            "Photo added successfully";
-
-        const preview = document.getElementById("photoPreview");
-        if (preview) {
-            preview.src = URL.createObjectURL(selectedFile);
-            preview.hidden = false;
-        }
-
+    const selectedFile = input.files[0];
+    if (!selectedFile || !selectedFile.type.startsWith("image/")) {
+        alert("Please choose a valid image file for the emergency scene.");
+        input.value = "";
+        return;
     }
 
+    lifeOS.photoAdded = true;
+
+    const uploadButton = document.querySelector(".photo-upload");
+    if (uploadButton) {
+        uploadButton.style.borderColor = "rgba(53, 213, 138, 0.35)";
+
+        const title = uploadButton.querySelector("strong");
+        if (title) title.textContent = selectedFile.name;
+
+        const copy = uploadButton.querySelector(".photo-upload__copy span");
+        if (copy) copy.textContent = "Photo added successfully";
+    }
+
+    input.value = "";
 }
+
 
 async function getCurrentLocation(silent = false) {
     const status = document.getElementById("locationStatusText");
