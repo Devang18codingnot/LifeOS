@@ -193,6 +193,37 @@ def database_configured():
     return client is not None and db is not None
 
 
+def get_session_user():
+    if "user_id" not in session:
+        return None
+
+    user_id = session["user_id"]
+    if not user_id:
+        return None
+
+    try:
+        return users.find_one({"_id": ObjectId(user_id)}, {"email": 1})
+    except (TypeError, ValueError, PyMongoError, Exception):
+        return None
+
+
+def can_access_patient_details(report, current_user):
+    if not report or not current_user:
+        return False
+
+    current_email = (current_user.get("email") or "").lower()
+    if current_email in AUTHORITY_EMAILS:
+        return True
+
+    report_user_id = report.get("user_id")
+    if not report_user_id:
+        return False
+
+    try:
+        return str(report_user_id) == str(ObjectId(session["user_id"]))
+    except (TypeError, ValueError, KeyError):
+        return False
+
 
 def ai_configured():
     return openai_client is not None
@@ -904,6 +935,34 @@ def get_reports():
         return jsonify({
             "error": "Unable to load reports."
         }), 500
+
+
+@app.route("/api/reports/<report_id>/patient-details", methods=["GET"])
+@login_required
+def get_report_patient_details(report_id):
+    if not database_configured():
+        return jsonify({
+            "error": "Database is not configured. Check MONGODB_URI in .env."
+        }), 503
+
+    try:
+        report = reports.find_one({"_id": ObjectId(report_id)})
+    except (PyMongoError, TypeError, ValueError):
+        return jsonify({"error": "Invalid report id."}), 400
+
+    if not report:
+        return jsonify({"error": "Report not found."}), 404
+
+    current_user = get_session_user()
+    if not can_access_patient_details(report, current_user):
+        return jsonify({
+            "error": "You are not authorized to view patient details for this report."
+        }), 403
+
+    return jsonify({
+        "report_id": str(report.get("_id")),
+        "patient_details": report.get("patient_details") or {}
+    })
 
 
 @app.route("/api/authority/reports", methods=["GET"])
