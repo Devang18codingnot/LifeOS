@@ -4,6 +4,9 @@ const lifeOS = {
     user: null,
     emergencyType: "",
     description: "",
+    voiceTranscript: "",
+    inputMethod: "typed",
+    audioDataUrl: null,
     photoAdded: false,
     reportId: null,
     location: null,
@@ -47,24 +50,47 @@ const API_BASE_URL = window.location.protocol === "file:"
         : `${window.location.origin}/api`;
 
 function updateTopbarAuth() {
-    const profileButton = document.getElementById("profileButton");
-    const authActionButton = document.getElementById("authActionButton");
+    const accountMenuButton = document.getElementById("accountMenuButton");
+    const accountMenuPanel = document.getElementById("accountMenuPanel");
 
-    if (!profileButton || !authActionButton) return;
+    if (!accountMenuButton || !accountMenuPanel) return;
 
     if (lifeOS.user) {
-        profileButton.style.display = "inline-flex";
-        authActionButton.textContent = "⇥";
-        authActionButton.setAttribute("aria-label", "Log out");
-        authActionButton.title = "Log out";
-        authActionButton.onclick = logout;
+        accountMenuButton.textContent = "☰";
+        accountMenuButton.setAttribute("aria-label", "Open account menu");
+        accountMenuButton.title = "Account menu";
+        accountMenuButton.onclick = toggleAccountMenu;
+        accountMenuPanel.hidden = true;
     } else {
-        profileButton.style.display = "none";
-        authActionButton.textContent = "Log in";
-        authActionButton.setAttribute("aria-label", "Log in");
-        authActionButton.title = "Log in";
-        authActionButton.onclick = () => window.location.href = "/login";
+        accountMenuPanel.hidden = true;
+        accountMenuButton.textContent = "Log in";
+        accountMenuButton.setAttribute("aria-label", "Log in");
+        accountMenuButton.title = "Log in";
+        accountMenuButton.onclick = () => window.location.href = "/login";
     }
+
+    accountMenuButton.setAttribute("aria-expanded", "false");
+}
+
+function toggleAccountMenu(event) {
+    if (event) event.stopPropagation();
+
+    const accountMenuButton = document.getElementById("accountMenuButton");
+    const accountMenuPanel = document.getElementById("accountMenuPanel");
+    if (!accountMenuButton || !accountMenuPanel || !lifeOS.user) return;
+
+    const isOpening = accountMenuPanel.hidden;
+    accountMenuPanel.hidden = !isOpening;
+    accountMenuButton.setAttribute("aria-expanded", String(isOpening));
+}
+
+function closeAccountMenu() {
+    const accountMenuButton = document.getElementById("accountMenuButton");
+    const accountMenuPanel = document.getElementById("accountMenuPanel");
+    if (!accountMenuButton || !accountMenuPanel) return;
+
+    accountMenuPanel.hidden = true;
+    accountMenuButton.setAttribute("aria-expanded", "false");
 }
 
 function renderLifeHistory(reports) {
@@ -204,10 +230,10 @@ function openLifeSavedHistory() {
 async function loadProfile() {
     try {
         const response = await fetch(`${API_BASE_URL}/profile`, { credentials: "include" });
-        const profile = await response.json();
-        if (!response.ok) throw new Error(profile.error || "Could not load profile.");
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Could not load profile.");
         const form = document.getElementById("profileForm");
-        Object.entries(profile).forEach(([field, value]) => {
+        Object.entries(result.profile || {}).forEach(([field, value]) => {
             if (form.elements[field]) form.elements[field].value = value;
         });
     } catch (error) {
@@ -236,17 +262,40 @@ async function saveProfile(event) {
 }
 
 async function logout() {
+    const logoutMenuButton = document.getElementById("logoutMenuButton");
+
+    if (logoutMenuButton) {
+        logoutMenuButton.disabled = true;
+        logoutMenuButton.setAttribute("aria-busy", "true");
+    }
+
     try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
+        const response = await fetch(`${API_BASE_URL}/auth/logout`, {
             method: "POST",
             credentials: "include"
         });
-    } finally {
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(result.error || "Could not log out. Please try again.");
+        }
+
         lifeOS.user = null;
-        updateTopbarAuth();
-        window.location.href = "/login";
+        window.location.replace("/login");
+    } catch (error) {
+        console.error("Logout failed:", error);
+        if (logoutMenuButton) {
+            logoutMenuButton.disabled = false;
+            logoutMenuButton.removeAttribute("aria-busy");
+        }
+        alert(error.message);
     }
 }
+
+document.addEventListener("click", () => closeAccountMenu());
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeAccountMenu();
+});
 
 
 /* =========================================
@@ -284,11 +333,30 @@ function selectEmergency(type) {
     lifeOS.emergencyType = type;
 
     document.getElementById("reportTitle").textContent = type;
+    updateInstantHelp(type);
 
     showScreen("reportScreen");
     getCurrentLocation(true);
 
     console.log("Emergency selected:", type);
+}
+
+function updateInstantHelp(type) {
+    const guidance = {
+        Accident: "Move away from traffic if it is safe. Do not move an injured person unless there is immediate danger.",
+        "Medical Emergency": "Check that the person is breathing, keep them calm, and avoid giving food or medicine unless instructed.",
+        Fire: "Leave immediately, stay low in smoke, and never re-enter the building for belongings.",
+        Injury: "Keep the injured person still, apply gentle pressure to serious bleeding, and wait for professional help.",
+        "Other Emergency": "Move away from immediate danger, stay with others if safe, and describe the situation to emergency services."
+    };
+
+    const helpText = document.getElementById("instantHelpText");
+    const helpStatus = document.getElementById("instantHelpStatus");
+
+    if (helpText) {
+        helpText.textContent = guidance[type] || guidance["Other Emergency"];
+    }
+    if (helpStatus) helpStatus.textContent = "Emergency services can help before analysis is complete.";
 }
 
 
@@ -311,6 +379,10 @@ function goHome() {
 
     lifeOS.emergencyType = "";
     lifeOS.description = "";
+    lifeOS.voiceTranscript = "";
+    lifeOS.inputMethod = "typed";
+    lifeOS.audioDataUrl = null;
+    voiceAudioReady = Promise.resolve();
     lifeOS.photoAdded = false;
     lifeOS.reportId = null;
     resetLocationState();
@@ -320,6 +392,14 @@ function goHome() {
 
     if (textarea) {
         textarea.value = "";
+    }
+
+    const photoInput = document.getElementById("photoInput");
+    const photoPreview = document.getElementById("photoPreview");
+    if (photoInput) photoInput.value = "";
+    if (photoPreview) {
+        photoPreview.src = "";
+        photoPreview.hidden = true;
     }
 
     updateCharacterCount();
@@ -392,11 +472,17 @@ function photoSelected() {
         uploadButton.style.borderColor =
             "rgba(53, 213, 138, 0.35)";
 
-        uploadButton.querySelector("strong").textContent =
-            input.files[0].name;
+        const selectedFile = input.files[0];
+        uploadButton.querySelector("strong").textContent = selectedFile.name;
 
         uploadButton.querySelector("span:not(.arrow)").textContent =
             "Photo added successfully";
+
+        const preview = document.getElementById("photoPreview");
+        if (preview) {
+            preview.src = URL.createObjectURL(selectedFile);
+            preview.hidden = false;
+        }
 
     }
 
@@ -483,70 +569,170 @@ async function getCurrentLocation(silent = false) {
    VOICE INPUT
 ========================================= */
 
-function voiceInput() {
+let voiceRecognition = null;
+let voiceRecognitionActive = false;
+let voiceMediaRecorder = null;
+let voiceMediaStream = null;
+let voiceAudioChunks = [];
+let voiceAudioReady = Promise.resolve();
+let resolveVoiceAudioReady = () => {};
 
-    /*
-        This is a prototype placeholder.
+function setVoiceStatus(message, isError = false) {
+    const status = document.getElementById("voiceStatus");
+    if (!status) return;
 
-        Later we can connect this button to:
-        - Web Speech API
-        - Whisper
-        - Another speech-to-text service
-    */
+    status.textContent = message;
+    status.classList.toggle("error", isError);
+}
 
-    if (!("webkitSpeechRecognition" in window)) {
+function setVoiceButtonState(isActive) {
+    const button = document.getElementById("voiceButton");
+    if (!button) return;
 
-        alert(
-            "Voice input is not supported in this browser. " +
-            "Please type the emergency description."
-        );
+    button.disabled = false;
+    button.textContent = isActive ? "Recording..." : "Record voice";
+    button.classList.toggle("voice-button--active", isActive);
+    button.setAttribute("aria-label", isActive ? "Stop recording" : "Start voice recording");
+}
 
+async function voiceInput() {
+    if (voiceRecognitionActive) {
+        voiceRecognition.stop();
         return;
     }
 
+    if (!window.isSecureContext && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+        setVoiceStatus("Voice input needs HTTPS or localhost. Please type the description.", true);
+        return;
+    }
 
-    const recognition =
-        new webkitSpeechRecognition();
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+        setVoiceStatus("Voice input is not supported here. Please type the description.", true);
+        return;
+    }
 
-    recognition.lang = "en-IN";
+    if (navigator.permissions?.query) {
+        try {
+            const permission = await navigator.permissions.query({ name: "microphone" });
+            if (permission.state === "denied") {
+                setVoiceStatus("Microphone permission is blocked. Allow it for this site in Chrome, then try again.", true);
+                return;
+            }
+        } catch (error) {
+            console.warn("Microphone permission state could not be checked:", error.message);
+        }
+    }
 
-    recognition.continuous = false;
+    try {
+        voiceMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (window.MediaRecorder) {
+            voiceAudioReady = new Promise((resolve) => {
+                resolveVoiceAudioReady = resolve;
+            });
+            const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg"]
+                .find((type) => MediaRecorder.isTypeSupported(type));
+            const recordingMimeType = mimeType || "audio/webm";
+            voiceMediaRecorder = new MediaRecorder(voiceMediaStream, mimeType ? { mimeType } : undefined);
+            voiceAudioChunks = [];
+            voiceMediaRecorder.ondataavailable = (event) => {
+                if (event.data.size) voiceAudioChunks.push(event.data);
+            };
+            voiceMediaRecorder.onstop = () => {
+                const blob = new Blob(voiceAudioChunks, { type: recordingMimeType });
+                if (blob.size > 2 * 1024 * 1024) {
+                    setVoiceStatus("Audio clip was too large to send. The transcript is still ready.", true);
+                    resolveVoiceAudioReady();
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    lifeOS.audioDataUrl = reader.result;
+                    setVoiceStatus("Voice audio and transcript are ready to send to the authority.");
+                    resolveVoiceAudioReady();
+                };
+                reader.readAsDataURL(blob);
+            };
+            voiceMediaRecorder.start();
+        }
+    } catch (error) {
+        resolveVoiceAudioReady();
+        voiceMediaStream?.getTracks().forEach((track) => track.stop());
+        voiceMediaStream = null;
+        setVoiceStatus("Audio recording is unavailable, but transcript input can still be used.", true);
+        console.warn("Audio recording could not start:", error.message);
+    }
 
-    recognition.interimResults = false;
+    if (!voiceRecognition) {
+        try {
+            voiceRecognition = new Recognition();
+        } catch (error) {
+            setVoiceStatus("Voice input could not start. Please type the description.", true);
+            console.error("Voice recognition setup failed:", error);
+            return;
+        }
 
+        voiceRecognition.lang = "en-IN";
+        voiceRecognition.continuous = false;
+        voiceRecognition.interimResults = false;
 
-    recognition.onstart = function () {
+        voiceRecognition.onstart = function () {
+            voiceRecognitionActive = true;
+            setVoiceButtonState(true);
+            setVoiceStatus("Listening... speak clearly, then pause.");
+        };
 
-        console.log("Voice recognition started.");
+        voiceRecognition.onresult = function (event) {
+            const transcript = event.results[0]?.[0]?.transcript?.trim();
+            const input = document.getElementById("emergencyDescription");
+            if (!transcript || !input) return;
 
-    };
+            input.value = input.value.trim()
+                ? `${input.value.trim()} ${transcript}`
+                : transcript;
+            lifeOS.voiceTranscript = transcript;
+            lifeOS.inputMethod = "voice";
+            updateCharacterCount();
+            setVoiceStatus("Voice description added and ready to send to the authority.");
+        };
 
+        voiceRecognition.onerror = function (event) {
+            const messages = {
+                "not-allowed": "Microphone permission was denied. Allow it in Chrome, then try again.",
+                "service-not-allowed": "Chrome blocked speech recognition. Check microphone and site permissions.",
+                "audio-capture": "No microphone was found. Check your microphone, then try again.",
+                "no-speech": "No speech detected. Try again or type the description.",
+                "network": "Speech recognition needs a network connection. Please type the description if it fails again.",
+                "aborted": "Voice input stopped. You can try again or type the description."
+            };
+            setVoiceStatus(messages[event.error] || "Voice input failed. Please try again or type the description.", true);
+            console.error("Voice recognition error:", event.error);
+        };
 
-    recognition.onresult = function (event) {
+        voiceRecognition.onend = function () {
+            voiceRecognitionActive = false;
+            setVoiceButtonState(false);
+            if (voiceMediaRecorder && voiceMediaRecorder.state !== "inactive") {
+                voiceMediaRecorder.stop();
+            }
+            voiceMediaRecorder = null;
+            voiceMediaStream?.getTracks().forEach((track) => track.stop());
+            voiceMediaStream = null;
+        };
+    }
 
-        const speech =
-            event.results[0][0].transcript;
-
-        document.getElementById(
-            "emergencyDescription"
-        ).value = speech;
-
-        updateCharacterCount();
-
-    };
-
-
-    recognition.onerror = function (event) {
-
-        console.error(
-            "Voice recognition error:",
-            event.error
-        );
-
-    };
-
-
-    recognition.start();
+    try {
+        voiceRecognition.start();
+    } catch (error) {
+        voiceRecognitionActive = false;
+        setVoiceButtonState(false);
+        if (voiceMediaRecorder && voiceMediaRecorder.state !== "inactive") voiceMediaRecorder.stop();
+        voiceMediaStream?.getTracks().forEach((track) => track.stop());
+        voiceMediaRecorder = null;
+        voiceMediaStream = null;
+        setVoiceStatus("Voice input could not start. Check Chrome's microphone permission or type instead.", true);
+        console.error("Voice recognition start failed:", error);
+    }
 
 }
 
@@ -556,6 +742,9 @@ function voiceInput() {
 ========================================= */
 
 async function analyzeEmergency() {
+
+    if (voiceRecognitionActive) voiceRecognition.stop();
+    await voiceAudioReady;
 
     const description =
         document
@@ -602,6 +791,9 @@ async function saveEmergencyReport() {
     const report = {
         emergencyType: lifeOS.emergencyType || "Emergency",
         description: lifeOS.description,
+        voiceTranscript: lifeOS.voiceTranscript || null,
+        inputMethod: lifeOS.inputMethod,
+        audioDataUrl: lifeOS.audioDataUrl || null,
         location: lifeOS.location,
         locationLabel: lifeOS.locationLabel || null,
         photoUrl: null
@@ -629,7 +821,7 @@ async function saveEmergencyReport() {
             throw new Error(result.error || "The report could not be saved.");
         }
 
-        lifeOS.reportId = result.reportId;
+        lifeOS.reportId = result.reportId || result.report?._id || null;
 
         console.log("Emergency report saved:", lifeOS.reportId);
 
@@ -853,6 +1045,13 @@ function generatePriorityResult(guidance) {
     document.getElementById("nextAction").textContent = lifeOS.nextAction;
     document.getElementById("actionDescription").textContent = guidance.actionDescription;
     document.querySelector(".priority-badge").textContent = `${lifeOS.priority} PRIORITY`;
+    const confirmation = document.querySelector(".saved-confirmation");
+    if (confirmation) {
+        confirmation.querySelector("strong").textContent = "Life saved report sent";
+        confirmation.querySelector("span").textContent = lifeOS.reportId
+            ? "Authority confirmation: awaiting status update."
+            : "The report is ready for emergency responders.";
+    }
 
     showScreen("priorityScreen");
 
@@ -900,17 +1099,13 @@ function callEmergency() {
         can initiate the emergency call.
     */
 
-    const confirmed =
-        confirm(
-            "Call emergency services now?"
-        );
+    const confirmed = confirm("Call local emergency services now? Use your area's emergency number if 112 is not available.");
 
 
     if (!confirmed) return;
 
 
-    window.location.href =
-        "tel:112";
+    window.location.href = "tel:112";
 
 }
 
