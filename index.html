@@ -1,64 +1,556 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log in | LifeOS</title>
+
+    <title>LifeOS — Emergency Co-Pilot</title>
+
+    <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
     <link rel="stylesheet" href="style.css?v=responsive-20260915-v2">
 </head>
+
 <body>
+
     <main class="app">
-        <section class="screen active auth-screen">
-            <div class="auth-shell">
-                <div class="auth-visual">
-                    <div class="auth-mark">L</div>
-                    <span class="auth-kicker">LIFEOS / PRIVATE ACCESS</span>
-                    <h1>Ready when<br><em>it matters.</em></h1>
-                    <p>Your emergency information stays connected to your account and is protected by secure sign-in.</p>
-                    <div class="auth-trust"><span>✓</span> Private account storage</div>
-                    <div class="auth-trust"><span>✓</span> Personal report history</div>
+
+        <!-- =========================================
+             SCREEN 1 — HOME
+        ========================================== -->
+        <section id="homeScreen" class="screen active">
+
+            <header class="topbar">
+                <div class="brand" onclick="goHome()" style="cursor:pointer;" aria-label="Go to dashboard">
+                    <div class="brand-icon">L</div>
+
+                    <div>
+                        <h1>LifeOS</h1>
+                        <span>Emergency Co-Pilot</span>
+                    </div>
                 </div>
 
-                <div class="auth-card">
-                    <div class="auth-form-heading">
-                        <span class="auth-form-label">ACCOUNT ACCESS</span>
-                        <h2 id="authTitle">Welcome back</h2>
-                        <p id="authSubtitle">Log in to securely save and access your emergency reports.</p>
+                <div class="topbar-actions">
+                    <div id="accountMenu" class="account-menu">
+                        <button
+                            id="accountMenuButton"
+                            class="icon-button"
+                            type="button"
+                            onclick="toggleAccountMenu(event)"
+                            aria-label="Open account menu"
+                            aria-expanded="false"
+                        >
+                            ☰
+                        </button>
+
+                        <div id="accountMenuPanel" class="account-menu__panel" hidden>
+                            <button id="logoutMenuButton" class="account-menu__item account-menu__item--danger" type="button" onclick="logout()">
+                                <span aria-hidden="true">⇥</span>
+                                Log out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+
+            <div class="home-content">
+
+                <div class="hero">
+                    <div class="status-pill" id="systemStatusPill">
+                        <span class="status-dot"></span>
+                        System Ready
                     </div>
 
-                    <form id="authForm" onsubmit="submitAuth(event)">
-                        <label id="nameField" hidden>
-                            Name
-                            <input id="authName" type="text" autocomplete="name" maxlength="100">
-                        </label>
-                        <label>
-                            Email
-                            <input id="authEmail" type="email" autocomplete="email" required>
-                        </label>
-                        <label>
-                            Password
-                            <span class="password-field">
-                                <input id="authPassword" type="password" autocomplete="current-password" minlength="8" required>
-                                <button id="passwordToggle" class="password-toggle" type="button" onclick="togglePasswordVisibility()" aria-label="Show password" aria-pressed="false">Show</button>
-                            </span>
-                        </label>
-                        <button class="primary-button auth-submit" type="submit">
-                            <span id="authSubmitText">Log in</span><span>→</span>
-                        </button>
-                    </form>
+                    <div id="offlineStatus" class="status-pill" style="display:none; margin-top:10px; background:rgba(248,86,86,0.08); color:#fca5a5; border:1px solid rgba(248,86,86,0.25);">
+                        <span class="status-dot" style="background:#f87171;"></span>
+                        Offline mode
+                    </div>
 
-                    <p id="authError" class="auth-error" role="alert"></p>
-                    <button id="authToggle" class="auth-toggle" type="button" onclick="toggleAuthMode()">
-                        Create an account
-                    </button>
-                    <a class="authority-user-link" href="/authority/login">Authority login</a>
+                    <h2>
+                        Your emergency<br>
+                        <span>co-pilot.</span>
+                    </h2>
+
+                    <p>
+                        When every second matters,
+                        LifeOS helps you know what to do first.
+                    </p>
                 </div>
+
+
+                <div class="section-heading">
+                    <h3>What is happening?</h3>
+                    <span>Select one</span>
+                </div>
+
+
+                <div class="emergency-grid">
+
+                    <button
+                        class="emergency-card accident"
+                        onclick="selectEmergency('Accident')"
+                    >
+                        <div class="card-icon">🚗</div>
+                        <div>
+                            <strong>Accident</strong>
+                            <small>Road accident</small>
+                        </div>
+                    </button>
+
+
+                    <button
+                        class="emergency-card medical"
+                        onclick="selectEmergency('Medical Emergency')"
+                    >
+                        <div class="card-icon">🏥</div>
+                        <div>
+                            <strong>Medical</strong>
+                            <small>Medical emergency</small>
+                        </div>
+                    </button>
+
+
+                    <button
+                        class="emergency-card fire"
+                        onclick="selectEmergency('Fire')"
+                    >
+                        <div class="card-icon">🔥</div>
+                        <div>
+                            <strong>Fire</strong>
+                            <small>Fire or smoke</small>
+                        </div>
+                    </button>
+
+
+                    <button
+                        class="emergency-card injury"
+                        onclick="selectEmergency('Injury')"
+                    >
+                        <div class="card-icon">🩹</div>
+                        <div>
+                            <strong>Injury</strong>
+                            <small>Physical injury</small>
+                        </div>
+                    </button>
+
+                </div>
+
+
+                <button
+                    class="other-emergency"
+                    onclick="selectEmergency('Other Emergency')"
+                >
+                    <span>⚠</span>
+                    Other Emergency
+                    <span class="arrow">→</span>
+                </button>
+
+
+                <div class="location-status">
+                    <div class="location-icon">⌖</div>
+
+                    <div>
+                        <strong>Location available</strong>
+                        <span>Ready to share when needed</span>
+                    </div>
+
+                    <div class="location-check">✓</div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <section id="profileScreen" class="screen">
+            <header class="page-header">
+                <button class="back-button" onclick="goHome()">←</button>
+                <div>
+                    <span class="eyebrow">YOUR SAFETY FILE</span>
+                    <h2>Medical profile</h2>
+                </div>
+            </header>
+            <div class="profile-content">
+                <p class="profile-note">This information helps responders understand your needs. Keep it current and do not enter anything you do not want stored.</p>
+                <form id="profileForm" onsubmit="saveProfile(event)">
+                    <label>Blood type<input name="blood_group" maxlength="20" placeholder="e.g. O+" /></label>
+                    <label>Allergies<textarea name="allergies" maxlength="500" placeholder="List allergies or write None"></textarea></label>
+                    <label>Medical conditions<textarea name="medical_conditions" maxlength="500" placeholder="Relevant conditions"></textarea></label>
+                    <label>Current medications<textarea name="medications" maxlength="500" placeholder="Medication names only"></textarea></label>
+                    <label>Emergency contact name<input name="emergency_contact" maxlength="100" /></label>
+                    <label>Emergency contact phone<input name="emergency_phone" maxlength="30" inputmode="tel" /></label>
+                    <button class="primary-button" type="submit"><span>Save medical profile</span><span>→</span></button>
+                </form>
+                <p id="profileStatus" class="profile-status" role="status"></p>
             </div>
         </section>
+
+
+
+        <!-- =========================================
+             SCREEN 2 — EMERGENCY REPORT
+        ========================================== -->
+        <section id="reportScreen" class="screen">
+
+            <header class="page-header">
+
+                <button class="back-button" onclick="goHome()">
+                    ←
+                </button>
+
+                <div>
+                    <span class="eyebrow">EMERGENCY REPORT</span>
+                    <h2 id="reportTitle">Accident</h2>
+                </div>
+
+            </header>
+
+
+            <div class="report-content">
+
+                <div class="question-block">
+
+                    <span class="step-label">
+                        STEP 01
+                    </span>
+
+                    <h2>
+                        Tell us what<br>
+                        <span>happened.</span>
+                    </h2>
+
+                    <p>
+                        Give LifeOS as much information as you can.
+                        Keep it simple.
+                    </p>
+
+                </div>
+
+
+                <div class="input-container">
+
+                    <textarea
+                        id="emergencyDescription"
+                        aria-label="Describe the emergency"
+                        placeholder="Example: There has been a bike accident. One person is injured..."
+                        maxlength="500"
+                    ></textarea>
+
+                    <div class="input-footer">
+                        <span id="characterCount">0 / 500</span>
+
+                        <button
+                            id="voiceButton"
+                            type="button"
+                            class="voice-button voice-button--record"
+                            onclick="voiceInput()"
+                        >
+                            Record voice
+                        </button>
+                    </div>
+
+                    <p id="voiceStatus" class="voice-status" role="status" aria-live="polite"></p>
+
+                </div>
+
+
+                <div class="or-divider">
+                    <span>OR</span>
+                </div>
+
+
+                <button
+                    type="button"
+                    class="photo-upload"
+                    onclick="document.getElementById('photoInput').click()"
+                    aria-label="Add a scene photo"
+                >
+                    <div class="upload-icon">＋</div>
+
+                    <div class="photo-upload__copy">
+                        <strong>Add scene photo</strong>
+                        <span>Optional — help AI understand the scene</span>
+                    </div>
+
+                    <span class="arrow">→</span>
+                </button>
+
+                <input
+                    type="file"
+                    id="photoInput"
+                    accept="image/*"
+                    hidden
+                    onchange="photoSelected()"
+                >
+
+                <img id="photoPreview" class="photo-preview" alt="Selected emergency scene preview" hidden>
+
+
+                <div class="location-card">
+
+                    <div class="location-big">⌖</div>
+
+                    <div>
+                        <span>YOUR LOCATION</span>
+                        <strong id="locationStatusText">Location unavailable</strong>
+                        <small id="locationCoordinates" style="display:block; margin-top:4px; opacity:0.8;">Tap to detect your current position</small>
+                    </div>
+
+                    <button type="button" class="location-use" onclick="getCurrentLocation(false)" aria-label="Use my current location">Use</button>
+
+                </div>
+
+                <div id="locationMapWrap" style="margin-top: 12px; display:none; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,0.12);">
+                    <iframe id="locationMapFrame" title="Current location map" width="100%" height="180" style="border:0; display:none;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
+
+                <section class="instant-help" aria-labelledby="instantHelpTitle">
+                    <div class="instant-help__heading">
+                        <span class="instant-help__icon" aria-hidden="true">!</span>
+                        <div>
+                            <span class="eyebrow">IMMEDIATE SUPPORT</span>
+                            <h3 id="instantHelpTitle">Get help now</h3>
+                        </div>
+                    </div>
+                    <p id="instantHelpText">If anyone is in immediate danger, move to safety and call local emergency services.</p>
+                    <div class="instant-help__actions">
+                        <button class="instant-help__call" type="button" onclick="callEmergency()">
+                            <span aria-hidden="true">☎</span>
+                            Call emergency services
+                        </button>
+                        <button class="instant-help__secondary" type="button" onclick="getCurrentLocation(false)">
+                            Share location
+                        </button>
+                    </div>
+                    <p id="instantHelpStatus" class="instant-help__status" role="status" aria-live="polite"></p>
+                </section>
+
+                <button
+                    class="primary-button"
+                    onclick="analyzeEmergency()"
+                >
+                    <span>Analyze Emergency</span>
+                    <span>→</span>
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             SCREEN 3 — AI ANALYSIS
+        ========================================== -->
+        <section id="analysisScreen" class="screen analysis-screen">
+
+            <button class="flow-back-button" type="button" onclick="cancelAnalysis()" aria-label="Back to emergency report">
+                &larr; Back to report
+            </button>
+
+            <div class="analysis-center">
+
+                <div class="ai-orb">
+
+                    <div class="orb-ring ring-one"></div>
+                    <div class="orb-ring ring-two"></div>
+
+                    <div class="orb-core">
+                        AI
+                    </div>
+
+                </div>
+
+
+                <span class="eyebrow">
+                    LIFEOS AI
+                </span>
+
+                <h2>
+                    Understanding<br>
+                    the situation.
+                </h2>
+
+                <p>
+                    LifeOS is assessing the emergency
+                    and preparing your next steps.
+                </p>
+
+
+                <div class="analysis-steps">
+
+                    <div class="analysis-step" id="analysisStep1">
+                        <span class="step-status">○</span>
+                        <span>Understanding situation</span>
+                    </div>
+
+                    <div class="analysis-step" id="analysisStep2">
+                        <span class="step-status">○</span>
+                        <span>Assessing severity</span>
+                    </div>
+
+                    <div class="analysis-step" id="analysisStep3">
+                        <span class="step-status">○</span>
+                        <span>Identifying immediate risks</span>
+                    </div>
+
+                    <div class="analysis-step" id="analysisStep4">
+                        <span class="step-status">○</span>
+                        <span>Preparing action plan</span>
+                    </div>
+
+                </div>
+
+
+                <div class="analyzing-text">
+                    <span class="loading-dot"></span>
+                    ANALYZING...
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             SCREEN 4 — PRIORITY RESULT
+        ========================================== -->
+        <section id="priorityScreen" class="screen priority-screen">
+
+            <header class="priority-header">
+
+                <button class="flow-back-button" type="button" onclick="goHome()">
+                    &larr; Back to home
+                </button>
+
+                <div class="emergency-indicator">
+                    <span class="pulse-dot"></span>
+                    ACTIVE EMERGENCY
+                </div>
+
+                <div class="priority-menu">•••</div>
+
+            </header>
+
+
+            <div class="priority-content">
+
+                <div class="priority-badge">
+                    🚨 HIGH PRIORITY
+                </div>
+
+
+                <span class="priority-type" id="priorityType">
+                    ROAD ACCIDENT
+                </span>
+
+
+                <div class="priority-heading">
+
+                    <span>DO THIS</span>
+
+                    <h1>
+                        FIRST.
+                    </h1>
+
+                </div>
+
+
+                <div class="main-action-card">
+
+                    <div class="action-number">
+                        01
+                    </div>
+
+                    <div class="action-content">
+
+                        <span class="action-label">
+                            IMMEDIATE ACTION
+                        </span>
+
+                        <h2 id="mainAction">
+                            Call emergency services
+                        </h2>
+
+                        <p id="actionDescription">
+                            Get professional emergency assistance
+                            as quickly as possible.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    class="call-button"
+                    onclick="callEmergency()"
+                >
+                    <span class="call-icon">☎</span>
+
+                    <span>
+                        <small>EMERGENCY SERVICES</small>
+                        CALL NOW
+                    </span>
+
+                    <span>→</span>
+                </button>
+
+
+                <div class="next-action">
+
+                    <div class="next-number">
+                        02
+                    </div>
+
+                    <div>
+                        <span>NEXT ACTION</span>
+
+                        <strong id="nextAction">
+                            Check whether the person is breathing.
+                        </strong>
+                    </div>
+
+                    <span class="next-arrow">→</span>
+
+                </div>
+
+
+                <div class="priority-footer">
+
+                    <div>
+                        <span class="footer-dot blue"></span>
+                        Location detected
+                    </div>
+
+                    <div>
+                        <span class="footer-dot green"></span>
+                        Life saved report sent
+                    </div>
+
+                </div>
+
+                <div class="saved-confirmation" role="status" aria-live="polite">
+                    <strong>Life saved report sent</strong>
+                    <span>Authority confirmation: awaiting status update.</span>
+                </div>
+
+            </div>
+
+        </section>
+
     </main>
-    <script src="auth.js"></script>
+
+
+    <script src="app.js"></script>
+
 </body>
 </html>
