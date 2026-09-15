@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authority login | LifeOS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css?v=responsive-20260915-v2">
+</head>
+<body>
+    <main class="app">
+        <section class="screen active auth-screen">
+            <div class="auth-shell">
+                <div class="auth-visual">
+                    <div class="auth-mark">L</div>
+                    <span class="auth-kicker">LIFEOS / AUTHORIZED ACCESS</span>
+                    <h1>Ready when<br><em>it matters.</em></h1>
+                    <p>Review incoming emergency reports, listen to voice evidence, and confirm patient outcomes.</p>
+                    <div class="auth-trust"><span>✓</span> Protected operations portal</div>
+                    <div class="auth-trust"><span>✓</span> Live patient status updates</div>
+                </div>
+
+                <div class="auth-card authority-login-card">
+                    <div class="authority-login-security">
+                        <span class="authority-login-security__dot"></span>
+                        Secure authority access
+                    </div>
+                    <div class="auth-form-heading">
+                        <span class="auth-form-label">COMMAND CENTER</span>
+                        <h2>Authority login</h2>
+                        <p>Securely continue to the emergency response workspace.</p>
+                    </div>
+
+                    <div class="login-instructions">
+                        <strong>Access checklist</strong>
+                        <span><b>01</b> Use your approved authority email</span>
+                        <span><b>02</b> Enter your account password</span>
+                        <span><b>03</b> Confirm with the private access code</span>
+                    </div>
+
+                    <form id="authorityLoginForm" onsubmit="submitAuthorityLogin(event)">
+                        <label>
+                            Authority email
+                            <input id="authorityEmail" type="email" autocomplete="username" required>
+                        </label>
+                        <label>
+                            Password
+                            <span class="password-field">
+                                <input id="authorityPassword" type="password" autocomplete="current-password" required>
+                                <button id="authorityPasswordToggle" class="password-toggle" type="button" onclick="toggleAuthorityPassword()" aria-label="Show password">Show</button>
+                            </span>
+                        </label>
+                        <label>
+                            Authority access code
+                            <input id="authorityCode" type="password" autocomplete="one-time-code" required>
+                            <small class="authority-field-help">Use the private code issued to your response team.</small>
+                        </label>
+                        <button id="authoritySubmit" class="primary-button auth-submit" type="submit">
+                            <span>Enter command center</span><span>→</span>
+                        </button>
+                    </form>
+
+                    <p id="authorityLoginError" class="auth-error" role="alert"></p>
+                    <a class="authority-user-link" href="/login">User login</a>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="/authority-login.js"></script>
+</body>
+</html>

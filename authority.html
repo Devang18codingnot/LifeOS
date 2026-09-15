@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authority reports | LifeOS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css?v=responsive-20260915-v2">
+</head>
+<body>
+    <main class="app">
+        <section class="screen active authority-screen">
+            <header class="page-header authority-header">
+                <div>
+                    <span class="eyebrow">AUTHORIZED VIEW</span>
+                    <h1>Emergency command center</h1>
+                    <p>Monitor incoming alerts and confirm each patient outcome.</p>
+                </div>
+                <button class="back-button" type="button" onclick="logoutAuthority()" aria-label="Log out">⇥</button>
+            </header>
+
+            <div class="authority-content">
+                <div class="authority-overview" aria-label="Report summary">
+                    <div class="authority-metric authority-metric--urgent">
+                        <strong id="authorityDangerCount">0</strong>
+                        <span>In danger</span>
+                    </div>
+                    <div class="authority-metric authority-metric--treatment">
+                        <strong id="authorityTreatmentCount">0</strong>
+                        <span>In treatment</span>
+                    </div>
+                    <div class="authority-metric authority-metric--safe">
+                        <strong id="authoritySafeCount">0</strong>
+                        <span>Safe</span>
+                    </div>
+                    <div class="authority-metric">
+                        <strong id="authorityPendingCount">0</strong>
+                        <span>Pending</span>
+                    </div>
+                </div>
+                <div class="section-heading">
+                    <h2>Live incident feed</h2>
+                    <button class="authority-refresh" type="button" onclick="loadAuthorityReports()">Refresh</button>
+                </div>
+                <p id="authorityStatus" class="authority-status" role="status" aria-live="polite">Loading reports...</p>
+                <div id="authorityReports" class="authority-reports"></div>
+            </div>
+        </section>
+    </main>
+    <script src="/authority.js"></script>
+</body>
+</html>
