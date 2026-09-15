@@ -51,6 +51,10 @@
                         </button>
 
                         <div id="accountMenuPanel" class="account-menu__panel" hidden>
+                            <button id="profileMenuButton" class="account-menu__item" type="button" onclick="openProfile()">
+                                <span aria-hidden="true">✚</span>
+                                Medical profile
+                            </button>
                             <button id="logoutMenuButton" class="account-menu__item account-menu__item--danger" type="button" onclick="logout()">
                                 <span aria-hidden="true">⇥</span>
                                 Log out
@@ -289,8 +293,6 @@
                     hidden
                     onchange="photoSelected()"
                 >
-
-                <img id="photoPreview" class="photo-preview" alt="Selected emergency scene preview" hidden>
 
 
                 <div class="location-card">
