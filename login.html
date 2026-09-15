@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=responsive-20260915-v2">
 </head>
 <body>
     <main class="app">
@@ -40,7 +40,10 @@
                         </label>
                         <label>
                             Password
-                            <input id="authPassword" type="password" autocomplete="current-password" minlength="8" required>
+                            <span class="password-field">
+                                <input id="authPassword" type="password" autocomplete="current-password" minlength="8" required>
+                                <button id="passwordToggle" class="password-toggle" type="button" onclick="togglePasswordVisibility()" aria-label="Show password" aria-pressed="false">Show</button>
+                            </span>
                         </label>
                         <button class="primary-button auth-submit" type="submit">
                             <span id="authSubmitText">Log in</span><span>→</span>
@@ -51,6 +54,7 @@
                     <button id="authToggle" class="auth-toggle" type="button" onclick="toggleAuthMode()">
                         Create an account
                     </button>
+                    <a class="authority-user-link" href="/authority/login">Authority login</a>
                 </div>
             </div>
         </section>
