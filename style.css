@@ -2745,3 +2745,71 @@ textarea::placeholder {
         min-height: calc(100vh - 48px);
     }
 }
+/* Emergency Call in login page */
+.emergency-button {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 14px;
+    padding: 13px 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    color: #b42318;
+    background: rgba(180, 35, 24, 0.04);
+    border: 1px solid rgba(180, 35, 24, 0.22);
+    border-radius: 12px;
+
+    text-decoration: none;
+    transition:
+        background 180ms ease,
+        border-color 180ms ease,
+        transform 180ms ease;
+}
+
+.emergency-button:hover {
+    background: rgba(180, 35, 24, 0.08);
+    border-color: rgba(180, 35, 24, 0.38);
+    transform: translateY(-1px);
+}
+
+.emergency-button:active {
+    transform: translateY(0);
+}
+
+.emergency-icon {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+    background: rgba(180, 35, 24, 0.1);
+
+    font-size: 13px;
+}
+
+.emergency-button strong,
+.emergency-button small {
+    display: block;
+    text-align: left;
+}
+
+.emergency-button strong {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.emergency-button small {
+    margin-top: 2px;
+    color: #6b7280;
+    font-size: 11px;
+}
+
+.emergency-arrow {
+    margin-left: auto;
+    font-size: 18px;
+    opacity: 0.7;
+}
