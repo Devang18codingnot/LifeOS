@@ -1,3 +1,5 @@
+import os
+
 """LifeOS application entry point.
 
 Feature implementations live in backend/modules.
