@@ -1,1 +1,1 @@
-# LifeOS backend package.
+"""LifeOS backend package."""
