@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../../style.css?v=responsive-20260915-v2">
+    <link rel="stylesheet" href="../css/style.css?v=responsive-20260915-v2">
 </head>
 <body>
     <main class="app">
@@ -37,17 +37,21 @@
                     <h2>Your emergency<br><span>co-pilot.</span></h2>
                     <p>When every second matters, LifeOS helps you know what to do first.</p>
                 </div>
+
                 <div class="section-heading">
                     <h3>What is happening?</h3>
                     <span>Select one</span>
                 </div>
+
                 <div class="emergency-grid">
                     <button class="emergency-card accident" onclick="selectEmergency('Accident')"><div class="card-icon">🚗</div><div><strong>Accident</strong><small>Road accident</small></div></button>
                     <button class="emergency-card medical" onclick="selectEmergency('Medical Emergency')"><div class="card-icon">🏥</div><div><strong>Medical</strong><small>Medical emergency</small></div></button>
                     <button class="emergency-card fire" onclick="selectEmergency('Fire')"><div class="card-icon">🔥</div><div><strong>Fire</strong><small>Fire or smoke</small></div></button>
                     <button class="emergency-card injury" onclick="selectEmergency('Injury')"><div class="card-icon">🩹</div><div><strong>Injury</strong><small>Physical injury</small></div></button>
                 </div>
+
                 <button class="other-emergency" onclick="selectEmergency('Other Emergency')"><span>⚠</span>Other Emergency<span class="arrow">→</span></button>
+
                 <div class="location-status"><div class="location-icon">⌖</div><div><strong>Location available</strong><span>Ready to share when needed</span></div><div class="location-check">✓</div></div>
             </div>
         </section>
@@ -194,6 +198,6 @@
             </div>
         </section>
     </main>
-    <script src="../../app.js"></script>
+    <script src="../js/app.js"></script>
 </body>
 </html>
